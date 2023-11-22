@@ -1,7 +1,7 @@
 # Kubernetes and Fileless Execution:
 ## Overcoming Read-Only Root File System Challenges
 
-[![N|Solid](./images/fileless_main.png)]
+![N|Solid](./images/fileless_main.png)
 
  **Table of content:**
  - [Lab Setup](#item-zero)
@@ -29,7 +29,7 @@ In this tutorial, we'll explore the concept of fileless execution within Kuberne
 ## Lab Setup:
 <a id="item-zero"></a>
 Docker and Minikube are used as the infrastructe to make the lab as portable as possible.
-[![N|Solid](./images/lab.png)]
+![N|Solid](./images/lab.png)
 ```sh
 cd k8syamls/
 make launch-minikube
