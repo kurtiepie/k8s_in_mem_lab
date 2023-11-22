@@ -77,7 +77,7 @@ shm on /dev/shm type tmpfs (rw,nosuid,nodev,noexec,relatime,size=65536k)
 ```
 We can interact with `/dev/shm` for our purposes to execute scripts with python inpreter in runnimg memroy, even bypassing `noexec` flags assosated with the filesystem.
 
-`/dev/shm` will gernally be available for all pods on a Kuberntes work node by `deefault`.
+`/dev/shm` will gernally be available for all pods on a Kuberntes work node by `default`.
 
 We can see what version of python is available on the system with `python --version`
 
