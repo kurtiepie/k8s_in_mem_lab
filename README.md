@@ -13,7 +13,7 @@
  
 ## Synopsis
 
-In this tutorial, we'll explore the concept of fileless execution within Kubernetes environments, particularly focusing on pods deployed with read-only root file systems. This technique is crucial for scenarios where traditional file manipulation is restricted, offering an alternative method for executing tasks.
+In this tutorial, we'll explore the concept of fileless execution within Kubernetes environments, particularly focusing on pods deployed with read-only root file systems. This technique is crucial for scenarios where traditional file manipulation is restricted, offering an alternative method for executing tasks. Tom was here!
 
 ## Skills Requried
 - Linux Enumeration
