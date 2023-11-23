@@ -10,6 +10,7 @@
  - [Introduction to fee](#item-three)
  - [Interacting with postgesql](#item-five)
  - [Playing with kube-api insite a pod with `cluster-admin`](#item-six)
+ - [Tools](#item-seven)
  
 ## Synopsis
 
