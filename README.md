@@ -8,6 +8,7 @@
  - [Exploring the Read-Only Web Frontend](#item-one)
  - [Dealing with Read-Only File System](#item-two)
  - [Introduction to fee](#item-three)
+ - [Searching for pods on the network](#item-scan)
  - [Interacting with postgesql](#item-five)
  - [Playing with kube-api insite a pod with `cluster-admin`](#item-six)
  - [Tools](#item-seven)
@@ -153,6 +154,12 @@ For a glibc version of 2.34 I'm using the `ubuntu:16.04` docker image to cp my b
   - `os.execle(p, 'myid', {})`
   - Arguments: fdesc ,'process name', {"env=variables"}
 ---
+
+## Searching for other pods (scanning)
+<a id="item-scan"></a>
+By default Kubernetes pod network is completly wide open. Think of all pods as being on a shared vlan. 
+
+We need to port ping the subnet (get local subnet via `/proc/net/fib_trie`) in search of services
 
 ## Step 5: Interacting with a Discovered Postgres Server
 
